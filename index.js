@@ -5,6 +5,7 @@ require('dotenv').config();
 const jornadaRoutes = require('./routes/jornadaRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const challengeRoutes = require('./routes/challengeRoutes');
+const storeRoutes = require('./routes/storeRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use('/api/jornada', jornadaRoutes); // Rutas de Admin
 app.use('/api', statsRoutes);           // Rutas públicas
 app.use('/api/desafio', challengeRoutes);
+app.use('/api/tienda', storeRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'API is running!' });

@@ -55,9 +55,20 @@ exports.registrarJornada = async (req, res) => {
     res.status(201).json({ message: 'Jornada registrada y procesada exitosamente.' });
   } catch (error) {
     await client.query('ROLLBACK'); // Revertir en caso de error
+
+    // --- ¡AQUÍ ESTÁ LA MEJORA! ---
+    // '23505' es el código de error estándar de PostgreSQL para "unique_violation"
+    if (error.code === '23505') {
+      console.error('Error de duplicado:', error.detail); // Opcional: para tu log
+      // El mensaje de 'error.detail' suele ser muy descriptivo, como:
+      // "Key (player_id, session_date)=(1, 2025-09-24) already exists."
+      return res.status(409).json({ message: `Ya existen estadísticas registradas para esta fecha. Por favor, elige otra fecha.` });
+    }
+    
+    // Si es otro tipo de error, mantenemos el error genérico
     console.error('Error al registrar la jornada:', error);
     res.status(500).json({ message: 'Error interno del servidor.' });
   } finally {
-    client.release(); // Liberar la conexión
+    client.release();
   }
 };

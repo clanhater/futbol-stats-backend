@@ -7,6 +7,8 @@ const authMiddleware = require('../middlewares/authMiddleware');
 router.get('/status/:date', jornadaController.getJornadaStatus);
 router.get('/settings', jornadaController.getAppSettings);
 
+router.get('/:date/player/:playerId', jornadaController.getPlayerStatsForDate);
+
 // Ruta de registro que sí requiere autenticación
 router.post('/registrar', authMiddleware, jornadaController.registrarJornada);
 

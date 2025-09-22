@@ -104,3 +104,27 @@ exports.getAppSettings = async (req, res, next) => {
   }
 };
 // --- FIN DE LA NUEVA FUNCIONALIDAD ---
+
+/**
+ * Obtiene las estadísticas de un solo jugador para una fecha específica.
+ */
+exports.getPlayerStatsForDate = async (req, res, next) => {
+  const { date, playerId } = req.params;
+  try {
+    const query = `
+      SELECT games_won, games_lost, goals, assists
+      FROM daily_stats
+      WHERE player_id = $1 AND session_date = $2;
+    `;
+    const { rows } = await pool.query(query, [playerId, date]);
+
+    if (rows.length === 0) {
+      // Esto no es un error, simplemente significa que no hay datos registrados
+      return res.status(200).json(null);
+    }
+    
+    res.status(200).json(rows[0]);
+  } catch (error) {
+    next(error);
+  }
+};

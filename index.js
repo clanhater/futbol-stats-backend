@@ -2,22 +2,23 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const jornadaRoutes = require('./routes/jornadaRoutes'); // Importar
 
 const app = express();
-const PORT = process.env.PORT || 3001; // Usamos 3001 para evitar conflictos
+const PORT = process.env.PORT || 3001;
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Endpoint de prueba
+// Rutas
+app.use('/api/jornada', jornadaRoutes); // Usar
+
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'API is running!' });
 });
 
-// Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-module.exports = app; // Exportar app para Vercel
+module.exports = app;

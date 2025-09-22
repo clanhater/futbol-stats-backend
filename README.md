@@ -90,7 +90,7 @@ El endpoint de registro de jornadas está protegido. Debes incluir tu clave de a
 
 ---
 
-####  amministrador
+####  Administrador
 
 -   **`POST /api/jornada/registrar`**
     -   **Descripción:** Registra las estadísticas de una jornada completa para múltiples jugadores.

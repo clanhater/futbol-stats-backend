@@ -70,3 +70,59 @@ exports.getPlayerDetails = async (req, res, next) => { // Añadimos 'next' para 
     res.status(500).json({ message: 'Error interno del servidor.' });
   }
 };
+
+/**
+ * Obtiene los datos agregados para la página de portada.
+ */
+exports.getHomePageData = async (req, res, next) => {
+  try {
+    // 1. Encontrar la fecha de la última jornada registrada
+    const lastSessionDateQuery = 'SELECT MAX(session_date) as last_date FROM daily_stats';
+    const { rows: lastDateRows } = await pool.query(lastSessionDateQuery);
+
+    if (lastDateRows.length === 0 || !lastDateRows[0].last_date) {
+      // Si no hay datos, devolver una respuesta predeterminada
+      return res.status(200).json({
+        mvp: null,
+        top3: [],
+        funFact: "¡Registra tu primera jornada para empezar a ver estadísticas!"
+      });
+    }
+    const lastDate = lastDateRows[0].last_date;
+
+    // 2. Obtener el MVP de esa última jornada
+    const mvpQuery = `
+      SELECT p.id, p.nickname, p.avatar_type, p.avatar_value, ds.goals, ds.assists, ds.games_won, ds.games_lost
+      FROM daily_stats ds
+      JOIN players p ON ds.player_id = p.id
+      WHERE ds.session_date = $1 AND ds.is_mvp = TRUE
+      LIMIT 1;
+    `;
+    const { rows: mvpRows } = await pool.query(mvpQuery, [lastDate]);
+
+    // 3. Obtener el Top 3 de la clasificación general (usamos la misma lógica que en getClasificacion)
+    const top3Query = `
+      SELECT id, nickname, avatar_type, avatar_value,
+        CASE
+          WHEN total_games_played > 0 THEN ROUND((total_wins::DECIMAL / total_games_played) * 100, 2)
+          ELSE 0
+        END AS win_percentage
+      FROM players
+      ORDER BY win_percentage DESC, total_wins DESC
+      LIMIT 3;
+    `;
+    const { rows: top3Rows } = await pool.query(top3Query);
+
+    // 4. Generar un "Dato Curioso" (Fun Fact) - Lógica simple por ahora
+    const funFact = `Con ${mvpRows[0]?.goals || 0} goles, ¡${mvpRows[0]?.nickname || 'nadie'} fue imparable en la última jornada!`;
+    
+    res.status(200).json({
+      mvp: mvpRows.length > 0 ? mvpRows[0] : null,
+      top3: top3Rows,
+      funFact: funFact
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};

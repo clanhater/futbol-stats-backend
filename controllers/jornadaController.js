@@ -72,3 +72,27 @@ exports.registrarJornada = async (req, res) => {
     client.release();
   }
 };
+
+/**
+ * Devuelve el estado de registro para todos los jugadores en una fecha específica.
+ */
+exports.getJornadaStatus = async (req, res, next) => {
+  const { date } = req.params;
+  try {
+    // Obtenemos todos los jugadores y comprobamos si tienen una entrada en daily_stats para la fecha dada
+    const query = `
+      SELECT
+        p.id as player_id,
+        CASE
+          WHEN ds.id IS NOT NULL THEN 'registrado'
+          ELSE 'pendiente'
+        END as status
+      FROM players p
+      LEFT JOIN daily_stats ds ON p.id = ds.player_id AND ds.session_date = $1;
+    `;
+    const { rows } = await pool.query(query, [date]);
+    res.status(200).json(rows);
+  } catch (error) {
+    next(error); // Pasa el error al manejador central si tienes uno
+  }
+};

@@ -96,3 +96,16 @@ exports.getJornadaStatus = async (req, res, next) => {
     next(error); // Pasa el error al manejador central si tienes uno
   }
 };
+
+exports.getAppSettings = async (req, res, next) => {
+  try {
+    const { rows } = await pool.query('SELECT start_date FROM app_settings WHERE id = 1');
+    if (rows.length === 0) {
+      // Fallback por si la tabla está vacía
+      return res.status(404).json({ message: 'No se encontró la configuración de la aplicación.' });
+    }
+    res.status(200).json(rows[0]);
+  } catch (error) {
+    next(error);
+  }
+};

@@ -9,4 +9,6 @@ router.get('/status/:date', jornadaController.getJornadaStatus);
 // Aplicar el middleware de autenticación a esta ruta
 router.post('/registrar', authMiddleware, jornadaController.registrarJornada);
 
+router.get('/settings', jornadaController.getAppSettings);
+
 module.exports = router;

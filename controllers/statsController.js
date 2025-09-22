@@ -37,38 +37,36 @@ exports.getClasificacion = async (req, res) => {
 };
 
 /**
- * Obtiene los detalles completos y el historial de un jugador específico.
+ * Obtiene los detalles COMPLETOS de un jugador, incluyendo perfil, historial y desafíos.
  */
-exports.getPlayerDetails = async (req, res) => {
+exports.getPlayerDetails = async (req, res, next) => { // Añadimos 'next' para el manejo de errores
   const { id } = req.params;
   try {
-    // Primera consulta: obtener los datos principales del jugador
-    const playerQuery = 'SELECT * FROM players WHERE id = $1';
-    const playerResult = await pool.query(playerQuery, [id]);
+    // Usamos Promise.all para ejecutar todas las consultas en paralelo, ¡mucho más rápido!
+    const [playerRes, historyRes, achievementsRes] = await Promise.all([
+      pool.query('SELECT * FROM players WHERE id = $1', [id]),
+      pool.query('SELECT session_date, games_won, games_lost, goals, assists, performance_score, is_mvp FROM daily_stats WHERE player_id = $1 ORDER BY session_date ASC', [id]),
+      pool.query('SELECT a.name, a.description, a.icon FROM player_achievements pa JOIN achievements a ON pa.achievement_id = a.id WHERE pa.player_id = $1', [id]),
+      // NOTA: Las misiones son más complejas de unificar aquí porque son diarias.
+      // Por ahora, las dejaremos en un endpoint separado o las podríamos añadir si es necesario.
+      // Por simplicidad del Sprint 3, nos enfocaremos en los logros.
+    ]);
 
-    if (playerResult.rows.length === 0) {
+    if (playerRes.rows.length === 0) {
       return res.status(404).json({ message: 'Jugador no encontrado.' });
     }
     
-    // Segunda consulta: obtener su historial de estadísticas diarias para el gráfico
-    const historyQuery = `
-      SELECT session_date, games_won, games_lost, goals, assists, performance_score, is_mvp
-      FROM daily_stats
-      WHERE player_id = $1
-      ORDER BY session_date ASC;
-    `;
-    const historyResult = await pool.query(historyQuery, [id]);
-
-    // Combinamos los resultados en un solo objeto de respuesta
     const response = {
-      profile: playerResult.rows[0],
-      history: historyResult.rows,
-      // TODO: Aquí irá la lógica de logros y misiones en sprints futuros
+      profile: playerRes.rows[0],
+      history: historyRes.rows,
+      achievements: achievementsRes.rows // ¡Ahora los logros vienen incluidos!
     };
 
     res.status(200).json(response);
   } catch (error) {
+    // Usamos el manejador de errores central que ya tenemos
     console.error('Error al obtener los detalles del jugador:', error);
+    // En el futuro, podríamos usar next(error) si implementamos un middleware de errores
     res.status(500).json({ message: 'Error interno del servidor.' });
   }
 };

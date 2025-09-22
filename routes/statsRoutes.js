@@ -7,6 +7,6 @@ const statsController = require('../controllers/statsController');
 router.get('/clasificacion', statsController.getClasificacion);
 
 // Ruta para el perfil detallado de un jugador por su ID
-router.get('/jugadores/:id', statsController.getPlayerDetails);
+router.get('/jugadores/:id/perfil', statsController.getPlayerDetails);
 
 module.exports = router;

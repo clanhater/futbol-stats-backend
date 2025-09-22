@@ -1,5 +1,6 @@
 // controllers/jornadaController.js
 const pool = require('../config/db');
+const { processAchievements, processMissions } = require('../services/gamificationService');
 
 exports.registrarJornada = async (req, res) => {
   const { date, stats } = req.body; // stats es un array: [{ player_id, wins, losses, goals, assists }, ...]
@@ -35,6 +36,8 @@ exports.registrarJornada = async (req, res) => {
         WHERE id = $6
       `;
       await client.query(updatePlayerQuery, [wins + losses, wins, losses, goals, assists, player_id]);
+	  await processAchievements(client, playerStat.player_id);
+      await processMissions(client, playerStat.player_id, { date, ...playerStat });
       
       // Comprobar si es el MVP
       if (performanceScore > mvp.score) {
@@ -47,8 +50,6 @@ exports.registrarJornada = async (req, res) => {
       const mvpQuery = 'UPDATE daily_stats SET is_mvp = TRUE WHERE player_id = $1 AND session_date = $2';
       await client.query(mvpQuery, [mvp.player_id, date]);
     }
-    
-    // TODO: Aquí irá la lógica de misiones y logros en sprints futuros.
 
     await client.query('COMMIT'); // Confirmar transacción
     res.status(201).json({ message: 'Jornada registrada y procesada exitosamente.' });
